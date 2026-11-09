@@ -340,9 +340,9 @@ function buildStopCaption(o, skip){
     if(o.kind==='partTime') return '알바를 무단으로 째버렸다.';
     return rel? `${o.label} 대신 ${rel}와(과) 시간을 보냈다.` : `${o.label}을(를) 쉬었다.`;
   } else {
-    if(o.kind==='lecture') return pickAttendLectureLine(o.label) + ' (스태미나 -20)';
-    if(o.kind==='partTime') return `[${o.label}] 알바를 뛰었다. (스태미나 -30)`;
-    return `[${o.label}]에 참여했다. (스태미나 -30)`;
+    if(o.kind==='lecture') return pickAttendLectureLine(o.label) + ' (스테미나 -20)';
+    if(o.kind==='partTime') return `[${o.label}] 알바를 뛰었다. (스테미나 -30)`;
+    return `[${o.label}]에 참여했다. (스테미나 -30)`;
   }
 }
 
@@ -578,18 +578,18 @@ function renderMainHelp(){
       <div class="win-body">
         <p class="hint">매주 시작할 때 그 주의 시간표를 보고 자휴할 강의/활동을 전부 미리 정한다. 
         <br>한 번 확정하면 그 주는 바꿀 수 없다.<br><br>월~금까지의 일정을 하루씩 진행하며, 계획한 출석/자휴가 반영된다.
-        <br>모든 일정이 끝나고 밤이 되면 수면 시간을 골라 다음날 스태미나를 회복한다. <br>목표는 최대한 F 없이, 무사히 한 학기를 마무리하는 것이다. </p>
+        <br>모든 일정이 끝나고 밤이 되면 수면 시간을 골라 다음날 스테미나를 회복한다. <br>목표는 최대한 F 없이, 무사히 한 학기를 마무리하는 것이다. </p>
       </div>
     </div>
-    <div class="win"><div class="win-title"><span>스태미나</span></div>
+    <div class="win"><div class="win-title"><span>스테미나</span></div>
       <div class="win-body">
         <p class="hint">상한은 100. 강의 출석 1회당 -20, 활동/알바 1회당 -30.<br>0이 되면 바로 다음날은 통째로 날아가며, 그날 예정된 일정도 전부 결석/결근 처리된다.
-        <br>잠을 오래 잘수록(최대 7시간) 다음날 회복되는 스태미나가 많아지는데, 학년이 올라갈수록 풀수면 시 회복량이 줄어든다.</p>
+        <br>잠을 오래 잘수록(최대 7시간) 다음날 회복되는 스테미나가 많아지는데, 학년이 올라갈수록 풀수면 시 회복량이 줄어든다.</p>
       </div>
     </div>
     <div class="win"><div class="win-title"><span>전공별 결석 미반영 한도</span></div>
       <div class="win-body">
-        <p class="hint">전공마다 "결석 미반영 한도"와 감점 방식이 전부 다르다 <br>— 시간표 화면 중 우측 상단의 '결석  룰'에서 전공별로 실시간 확인 가능. 
+        <p class="hint">전공마다 "결석 미반영 한도"와 감점 방식이 전부 다르다. <br>— 시간표 화면 중 우측 상단의 '결석  룰'에서 전공별로 확인 가능. 
         <br>단, 전공과 무관하게 결석이 ${GLOBAL_ABSENCE_F}회 쌓이면 그 전공은 바로 F 확정이다.</p>
       </div>
     </div>
@@ -606,7 +606,7 @@ function renderMainHelp(){
   return frag;
 }
 
-/* ---- 스태미나 고갈 ① 암전 화면 ---- */
+/* ---- 스테미나 고갈 ① 암전 화면 ---- */
 function renderCrashBlackout(){
   const frag = el(`
     <div class="blackout-fade" style="position:fixed; inset:0; z-index:30; background:var(--fg); color:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px">
@@ -689,11 +689,11 @@ function renderSetup(){
         </div>
       </div>
     </div>
-    <div class="win"><div class="win-title"><span>RELATIONSHIPS</span><span>선택</span></div>
+    <div class="win"><div class="win-title"><span>RELATIONSHIPS (관계 기입)</span><span>선택</span></div>
       <div class="win-body">
         <div class="row">
           <input type="text" id="inp-rel-name" placeholder="이름" style="flex:1; min-width:90px">
-          <input type="text" id="inp-rel-tag" placeholder="태그" style="width:80px">
+          <input type="text" id="inp-rel-tag" placeholder="관계" style="width:80px">
           <button class="toggle-sq" id="btn-add-rel">추가</button>
         </div>
         <div class="row" id="rel-list"></div>
