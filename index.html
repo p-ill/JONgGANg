@@ -782,10 +782,10 @@ function renderWeekPlan(){
       <button id="btn-open-rules" style="background:none;border:1px solid var(--bg);color:var(--bg);font-size:10px;padding:3px 7px;font-family:var(--font);font-weight:700">결석 룰</button>
     </div>
       <div class="win-body">
-        <p class="hint">칸을 누르면 꺼진다 = 자휴. 한 번 확정하면 이번 주 안에는 못 바꿔.</p>
+        <p class="hint">아래 시간표의 전공 칸을 누르면 꺼짐 = 자휴. 한 번 확정하면 이번 주는 더 이상 못 바꿔.</p>
         <div class="legend"><span><i class="swatch"></i>출석</span><span><i class="swatch off"></i>자휴</span><span><i class="swatch" style="background:var(--hatch)"></i>수업없음</span></div>
         <div class="row" id="limit-strip" style="margin-top:2px"></div>
-        <p class="hint">검정 칩=이번 결석부터 바로 감점 · 빨간 칩=F 확정. ※ 결석 ${GLOBAL_ABSENCE_F}회 이상이면 전공 무관 F</p>
+        <p class="hint">검정 칩=이번 결석부터 바로 감점 · 빨간 칩=F 확정. <br>※ 결석 ${GLOBAL_ABSENCE_F}회 이상이면 전공 무관 F</p>
         <div id="grid-container"></div>
         <button class="btn" id="btn-confirm-week">이번 주 계획 확정</button>
       </div>
