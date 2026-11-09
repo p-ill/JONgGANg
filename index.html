@@ -322,7 +322,7 @@ const CRASH_LINES = ()=>[ `눈을 떴지만 몸이 움직이지 않았다. 오�
 // 여기 배열에 원하는 대사를 자유롭게 추가하면 됨 (예: 옆자리 친구가 조는 모습 등).
 function pickAttendLectureLine(label){
   const rel = pickRelName();
-  const pool = [ `[${label}] 수업에 출석했다.` ];
+  const pool = [ `[${label}] 수업에 출석했다.`, `[${label}] 지각할 뻔했다, 휴...`,`[${label}] 눈이 감긴다, 쿨쿨...`,`[${label}] 헐, 교수님 짱. 20분이나 일찍 끝내주셨다!!`, `[${label}] 눈 감았다 떴더니 강의가 끝나 있었다. 음?` ];
   if(rel) pool.push(`옆자리에 앉은 ${rel}의 조는 얼굴이 볼 만했다.`, `${rel}의 아이패드 화면을 훔쳐보았다. 사과 게임 264점?!`, `${rel}(이)가 결석했다. 무슨 일 있나?`,`${rel}(이)가 이 강의 분명, 분명 팀플 없다 그랬는데.`, `조는 와중에 교수님께서 갑자기 발표를 시키셨다. 웃지 마, ${rel}...`);
   return rand(pool);
 }
