@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<!-- 학점 서바이벌 : 시간표 기반 대학생활 킬링타임 시뮬레이션 (모노크롬 데스크탑 UI) -->
+<!-- 종강하고 싶어요 : 시간표 기반 대학생활 킬링타임 시뮬레이션 (모노크롬 데스크탑 UI) -->
 <meta name="claude:viewport-fit-sides" content="cover">
-<title>학점 서바이벌</title>
+<title>종강하고싶어요</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&family=DotGothic16&display=swap" rel="stylesheet">
@@ -144,9 +144,9 @@ const CAP_STAMINA = 100; // 스태미나 절대 상한 (항상 100)
 const AVATARS = ['🐣','🐥','🐻','🐰','🦊','🐱','🐼','🦁'];
 
 const STAGES = {
-  1: {key:1, label:'신입생', sub:'체력과 의지 모두 불탄다. 시간표는 망했지만 괜찮아.', recoverFull:80},
-  3: {key:3, label:'3학년',  sub:'슬슬 대외활동과 인턴을 준비해야 한다. 늙어가는 게 느껴진다.', recoverFull:70},
-  4: {key:4, label:'4학년',  sub:'막학기까지 18학점. 다 지쳤다. 그래도 끝은 봐야지.', recoverFull:60},
+  1: {key:1, label:'신입생', sub:'드디어 고대하던 대학 생활! 너무 설렌다. 비록 시간표는 망했지만 괜찮아.', recoverFull:80},
+  3: {key:3, label:'3학년',  sub:'슬슬 대외활동과 인턴을 준비해야 한다. 늙어가는 게 느껴져...', recoverFull:70},
+  4: {key:4, label:'4학년',  sub:'막학기마저 풀학점이라니. 다 지쳤다. 그래도 끝은 봐야지.', recoverFull:60},
 };
 // 수면 시간: 최대 7시간. 회복량 = recoverFull * factor, 상한은 항상 100.
 const SLEEP_OPTIONS = [ {h:4, factor:.5}, {h:5, factor:.7}, {h:6, factor:.85}, {h:7, factor:1.0} ];
@@ -221,10 +221,10 @@ function placeActivities(stageKey, optionalCount){
     const pool = ['동아리','소학회','학생회','헬스','학보사','멘토링'].sort(()=>Math.random()-0.5);
     for(let i=0;i<optionalCount;i++) place({id:'act-opt-'+i, type:'activity', name:pool[i % pool.length], weeksActive:'all', skipCount:0, attendCount:0});
   }
-  if(stageKey===3){ place({id:'act-contest', type:'activity', name:'공모전준비', weeksActive:'all', skipCount:0, attendCount:0}); }
+  if(stageKey===3){ place({id:'act-contest', type:'activity', name:'공모전 준비', weeksActive:'all', skipCount:0, attendCount:0}); }
   if(stageKey===4){
-    place({id:'act-intern', type:'activity', name:'인턴준비', weeksActive:'all', skipCount:0, attendCount:0});
-    place({id:'job-parttime', type:'partTime', name:'편의점알바', weeksActive:'all', skipCount:0, attendCount:0, unexcused:0});
+    place({id:'act-intern', type:'activity', name:'인턴 준비', weeksActive:'all', skipCount:0, attendCount:0});
+    place({id:'job-parttime', type:'partTime', name:'편의점 알바', weeksActive:'all', skipCount:0, attendCount:0, unexcused:0});
   }
   return items;
 }
@@ -307,17 +307,21 @@ function tryJobFiredEnding(){
 function pickRelName(){ if(!G.relationships.length) return null; return rand(G.relationships).name; }
 const NORMAL_LINES = (nick)=>[ `${nick}, 오늘도 묵묵히 수업을 들었다.`, `결석 없이 하루를 마쳤다. 기특하다.` ];
 const SKIP_WITH_REL_LINES = (nick, rel)=>[
-  `수업 대신 ${rel}와(과) 즐겁게 놀았다.`,
+  `수업을 째고 ${rel}와(과) 즐겁게 놀았다.`,
   `${rel}와(과) 보낸 하루, 그 자체로 충전이었다.`,
+  `${rel}(이)네 집들이를 갔다. 제법 깔끔한데?`,
+  `${rel}(이)가 한 번쯤은 째도 괜찮댔다. 그래서 카페 이름이 뭐라고?`,
+  `${rel}(와)과 롯데월드를 갔다. 눈치게임 대성공이다.`,
+  '분명 ${rel}(이)가 전화로 깨워준댔는데!!...`
 ];
-const SKIP_NO_REL_LINES = (nick)=>[ `수업 대신 혼자만의 시간을 택했다.`, `알람을 끄고 다시 잠들었다.` ];
+const SKIP_NO_REL_LINES = (nick)=>[ `수업 대신 혼자만의 시간을 택했다.`, `알람을 끄고 다시 잠들었다.`,`혼자 한강에 갔다. 날씨가 쌀쌀했지만 기분전환은 제대로 되었다.` ];
 const CRASH_LINES = ()=>[ `눈을 떴지만 몸이 움직이지 않았다. 오늘은 그냥... 날아갔다.`, `녹초가 되어 하루 종일 침대에서 나오지 못했다.` ];
 // 강의에 '출석'했을 때의 멘트 풀. 등록된 관계가 있으면 그 이름을 쓰는 버전도 섞어서 뽑음 —
 // 여기 배열에 원하는 대사를 자유롭게 추가하면 됨 (예: 옆자리 친구가 조는 모습 등).
 function pickAttendLectureLine(label){
   const rel = pickRelName();
   const pool = [ `[${label}] 수업에 출석했다.` ];
-  if(rel) pool.push(`옆자리에 앉은 ${rel}의 조는 얼굴이 볼 만했다.`);
+  if(rel) pool.push(`옆자리에 앉은 ${rel}의 조는 얼굴이 볼 만했다.`, `${rel}의 아이패드 화면을 훔쳐보았다. 사과 게임 264점?!`, `${rel}(이)가 결석했다. 무슨 일 있나?`,`${rel}(이)가 이 강의 분명, 분명 팀플 없다 그랬는데.`, `조는 와중에 교수님께서 갑자기 발표를 시키셨다. 웃지 마, ${rel}...`);
   return rand(pool);
 }
 function staminaBandComment(stam){
@@ -491,13 +495,13 @@ function computeFinalResult(){
   // 활동을 3회 이상 빠지면 아쉬운 한 줄을 덧붙인다. (알바는 무단결근 3회에서 이미 해고로 게임오버 처리되므로 제외)
   const ACTIVITY_NEGLECT_LINES = {
     '동아리':' 동아리 활동엔 소홀했다. 어느샌가 이름도 가물가물한 사람이 되어버렸다.',
-    '소학회':' 소학회도 흐지부지됐다. 발표 한 번 제대로 못 했다.',
-    '학생회':' 학생회 일도 자꾸 미뤘다. 선배들 보기 민망했다.',
-    '헬스':' 헬스도 작심삼일이었다. 등록만 하고 끝났다.',
+    '소학회':' 소학회 일정에 자꾸 빠져서 흐지부지됐다. 발표 한 번 제대로 못 했다.',
+    '학생회':' 학생회 일을 자꾸 미룬 탓에 선배들 보기 민망했다.',
+    '헬스':' 헬스는 역시나 작심삼일이었다. 등록만 하고 끝났다.',
     '학보사':' 학보사 마감을 몇 번이나 펑크냈다. 편집장 눈치가 보였다.',
-    '멘토링':' 멘토링도 뜸해졌다. 멘티에게 미안해졌다.',
+    '멘토링':' 이런저런 이유로 멘토링이 뜸해졌다. 멘티에게 미안해졌다.',
     '공모전준비':' 공모전 준비에 소홀했다. 결국 수상은 남의 이야기였다.',
-    '인턴준비':' 인턴 준비가 소홀했어. 나를 뽑아주는 기업이 없었다...',
+    '인턴준비':' 인턴 준비가 제대로 되지 않았다. 결국 나를 뽑아주는 기업이 없었다...',
   };
   G.activities.forEach(a=>{
     if(a.type==='activity' && a.skipCount>=3 && ACTIVITY_NEGLECT_LINES[a.name]){
