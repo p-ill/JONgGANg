@@ -1,0 +1,1000 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- 학점 서바이벌 : 시간표 기반 대학생활 킬링타임 시뮬레이션 (모노크롬 데스크탑 UI) -->
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>학점 서바이벌</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+/* 레이아웃: 흑백 윈도우-창 모듈. 폰트: 코딩체(Nanum Gothic Coding, 한글지원 모노스페이스) */
+:root{
+  --bg:#ffffff; --fg:#111111; --line:#111111; --dim:#8a8a8a; --hatch:#d8d8d8; --danger:#b7281e;
+  --font: 'Nanum Gothic Coding', 'DotGothic16', monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#121212; --fg:#eeeeee; --line:#eeeeee; --dim:#9a9a9a; --hatch:#2a2a2a; --danger:#ff6b5e; color-scheme: dark; }
+}
+:root[data-theme="dark"]{ --bg:#121212; --fg:#eeeeee; --line:#eeeeee; --dim:#9a9a9a; --hatch:#2a2a2a; --danger:#ff6b5e; color-scheme: dark; }
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--font);
+  padding-left:max(14px, env(safe-area-inset-left,0px));
+  padding-right:max(14px, env(safe-area-inset-right,0px));
+  min-height:100%;
+}
+html,body{height:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--bg)}
+h1,h2{font-family:var(--font); margin:0; text-wrap:balance}
+button{font-family:var(--font); cursor:pointer}
+.wrap{max-width:520px; margin:0 auto; padding-block:14px 48px; display:flex; flex-direction:column; gap:12px}
+
+/* ---- 윈도우 모듈 ---- */
+.win{border:2px solid var(--line); background:var(--bg)}
+.win-title{background:var(--fg); color:var(--bg); font-size:11px; letter-spacing:.06em; padding:5px 10px; display:flex; justify-content:space-between; align-items:center; font-weight:700}
+.win-body{padding:14px; display:flex; flex-direction:column; gap:10px}
+.hint{font-size:12px; color:var(--dim); line-height:1.55}
+
+/* ---- 상태바(상단) ---- */
+.statusrow{position:sticky; top:env(safe-area-inset-top,0px); z-index:10; display:flex; gap:6px}
+.sb-left{flex:1; border:2px solid var(--line); background:var(--bg); padding:5px; display:flex; gap:8px; align-items:center; min-width:0}
+.sb-avatar{font-size:56px; width:92px; height:92px; display:flex; align-items:center; justify-content:center; border:2px solid var(--line); flex-shrink:0; overflow:hidden}
+.sb-avatar img{width:100%; height:100%; object-fit:cover}
+.sb-meta{flex:1; min-width:0}
+.sb-name{font-size:16px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.sb-stage{font-size:12px; color:var(--dim)}
+.sb-stam-label{font-size:11px; display:flex; justify-content:space-between; margin-top:5px}
+.stam-track{height:9px; border:1px solid var(--line); background:var(--bg); overflow:hidden}
+.stam-fill{height:100%; background:var(--fg); transition:width .25s}
+.sb-right{border:2px solid var(--line); background:var(--bg); padding:5px 10px; font-size:13px; text-align:right; white-space:nowrap; display:flex; flex-direction:column; justify-content:center}
+.sb-right b{display:block; font-size:16px}
+
+/* ---- 버튼 ---- */
+.btn{border:2px solid var(--line); background:var(--bg); color:var(--fg); padding:11px 14px; font-size:13px; font-weight:700; width:100%; text-align:center}
+.btn:active{background:var(--fg); color:var(--bg)}
+.btn:disabled{opacity:.35; cursor:not-allowed}
+.btn-row{display:flex; gap:8px}
+.btn-row .btn{flex:1; width:auto}
+.toggle-sq{border:2px solid var(--line); background:var(--bg); color:var(--fg); padding:8px 12px; font-size:12.5px; font-weight:700}
+.toggle-sq.on{background:var(--fg); color:var(--bg)}
+input[type=text]{
+  font-family:var(--font); font-size:14px; padding:9px 10px; border:2px solid var(--line);
+  background:var(--bg); color:var(--fg); min-width:0;
+}
+input[type=text]:focus{outline:2px dashed var(--fg); outline-offset:1px}
+label.field{display:flex; flex-direction:column; gap:5px; font-size:11px; color:var(--dim)}
+.row{display:flex; gap:7px; flex-wrap:wrap}
+
+/* ---- 시간표 그리드 ---- */
+.grid{display:grid; border-left:2px solid var(--line); border-top:2px solid var(--line)}
+.gcell{border-right:2px solid var(--line); border-bottom:2px solid var(--line); display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:6px 3px; font-size:10.5px; min-height:52px; position:relative;}
+.gcell.head{font-weight:700; background:var(--fg); color:var(--bg); min-height:28px; font-size:11px}
+.gcell.label{font-size:9.5px; color:var(--dim); flex-direction:column; min-height:52px}
+.gcell.empty{background:repeating-linear-gradient(45deg, var(--hatch), var(--hatch) 4px, transparent 4px, transparent 8px)}
+.gcell.occ{flex-direction:column; gap:2px; font-weight:700; line-height:1.25}
+.gcell.occ small{font-weight:400; color:var(--dim); font-size:9px}
+.gcell.occ.off{background:var(--fg); color:var(--bg); opacity:.45}
+.gcell.occ.off small{color:var(--bg)}
+.legend{display:flex; gap:14px; font-size:10.5px; color:var(--dim); flex-wrap:wrap}
+.legend span{display:inline-flex; align-items:center; gap:4px}
+.swatch{width:10px;height:10px;border:1px solid var(--line); display:inline-block}
+.swatch.off{background:var(--fg); opacity:.45}
+
+/* ---- 하루 진행(런) 화면 ---- */
+.track-wrap{padding:22px 4px 8px}
+.track{position:relative; height:2px; background:var(--line); margin:0 6px}
+.stops{display:flex; justify-content:space-between; margin:0 0; position:relative; top:-1px}
+.stop{font-size:18px; width:28px; text-align:center}
+.stoplabel{font-size:8.5px; color:var(--dim); text-align:center; width:28px; margin-top:2px}
+.runner{position:absolute; top:-13px; font-size:20px; transition:left .55s cubic-bezier(.3,.8,.3,1); transform:translateX(-50%)}
+.caption-box{border:2px solid var(--line); min-height:72px; padding:12px; display:flex; flex-direction:column; justify-content:center; gap:6px}
+.caption-text{font-size:13.5px; line-height:1.6; animation:fadeup .4s ease}
+.caption-sub{font-size:10.5px; color:var(--dim)}
+@keyframes fadeup{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
+@keyframes fadeToDark{from{opacity:0} to{opacity:1}}
+.blackout-fade{animation:fadeToDark 1.4s ease forwards}
+.tap-hint{font-size:10px; color:var(--dim); text-align:center}
+
+/* ---- 수면 화면 ---- */
+.sleep-icon{font-size:30px; text-align:center}
+.sleep-row{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+.sleep-btn{border:2px solid var(--line); background:var(--bg); padding:10px 4px; font-size:11.5px; text-align:center}
+.sleep-btn:active{background:var(--fg); color:var(--bg)}
+.sleep-btn b{display:block; font-size:14px}
+
+/* ---- 주간요약/결과 ---- */
+.credit-list{display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto}
+.credit-item{border:1px solid var(--line); padding:8px 10px; font-size:12.5px; line-height:1.55}
+.credit-item .dtag{font-size:10px; color:var(--dim); font-weight:700}
+.progress-outer{height:8px; border:1px solid var(--line)}
+.progress-inner{height:100%; background:var(--fg)}
+.center{text-align:center}
+.bignum{font-size:40px; font-weight:700}
+.tagrow{display:flex; gap:6px; flex-wrap:wrap; justify-content:center}
+.stat-pill{font-size:10.5px; border:1px solid var(--line); padding:4px 9px}
+.gradegrid{display:flex; flex-direction:column; gap:6px}
+.graderow{display:flex; align-items:center; gap:8px; border:1px solid var(--line); padding:8px 10px}
+.gname{flex:1; min-width:0; font-size:12.5px; font-weight:700}
+.gmaj{font-size:9.5px; color:var(--dim); font-weight:400}
+.gpill{font-size:14px; font-weight:700; border:2px solid var(--line); padding:3px 9px}
+.gpill.F{background:var(--danger); color:#fff; border-color:var(--danger)}
+.chip-exhausted{background:var(--fg); color:var(--bg)}
+.chip-forcedF{background:var(--danger); color:#fff; border-color:var(--danger)}
+[hidden]{display:none!important}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+/* ===================== 데이터 정의 ===================== */
+const PERIODS = [
+  {id:'A', label:'A교시', short:'A', start:'09:00', end:'10:15'},
+  {id:'B', label:'B교시', short:'B', start:'10:30', end:'11:45'},
+  {id:'C', label:'C교시', short:'C', start:'12:00', end:'13:15'},
+  {id:'D', label:'D교시', short:'D', start:'13:30', end:'14:45'},
+  {id:'E', label:'E교시', short:'E', start:'15:00', end:'16:15'},
+  {id:'F', label:'F교시', short:'F', start:'16:30', end:'17:45'},
+];
+const DAYS = ['월','화','수','목','금'];
+const ACTIVITY_HOURS = [18,19,20,21,22];
+const WEEKS_TOTAL = 5;
+const GLOBAL_ABSENCE_F = 4; // 전공 무관, 이 횟수 이상 결석하면 바로 F
+const CAP_STAMINA = 100; // 스태미나 절대 상한 (항상 100)
+const AVATARS = ['🐣','🐥','🐻','🐰','🦊','🐱','🐼','🦁'];
+
+const STAGES = {
+  1: {key:1, label:'신입생', sub:'체력과 의지 모두 불탄다. 시간표는 망했지만 괜찮아.', recoverFull:80},
+  3: {key:3, label:'3학년',  sub:'슬슬 대외활동과 인턴을 준비해야 한다. 늙어가는 게 느껴진다.', recoverFull:70},
+  4: {key:4, label:'4학년',  sub:'막학기까지 18학점. 다 지쳤다. 그래도 끝은 봐야지.', recoverFull:60},
+};
+// 수면 시간: 최대 7시간. 회복량 = recoverFull * factor, 상한은 항상 100.
+const SLEEP_OPTIONS = [ {h:4, factor:.5}, {h:5, factor:.7}, {h:6, factor:.85}, {h:7, factor:1.0} ];
+
+const MAJOR_TYPES = ['A','B','C','D','E','F'];
+function majorPenalty(type, absence){
+  if (absence >= GLOBAL_ABSENCE_F) return {penalty:999, forcedF:true};
+  switch(type){
+    case 'A': return {penalty: absence<=2?0:(absence-2)*3, forcedF:false};
+    case 'B': return {penalty: absence*1, forcedF:false};
+    case 'C': { if (absence<=1) return {penalty:0, forcedF:false};
+      if (absence===2) return {penalty:4, forcedF:false};
+      return {penalty: 4 + (absence-2)*2, forcedF:false}; }
+    case 'D': return absence>=3 ? {penalty:999, forcedF:true} : {penalty:0, forcedF:false};
+    case 'E': return {penalty:0, forcedF:false}; // 4회부터는 전공 무관(GLOBAL_ABSENCE_F) 규칙으로 F
+    case 'F': return {penalty: Math.floor(absence/2)*4, forcedF:false};
+  }
+}
+const ABSENCE_LIMIT = {A:2, B:0, C:1, D:2, E:3, F:null}; // null = 전용 한도 없음(2회당 감점)
+const MAJOR_DESC = {
+  A:'결석 2회까지 무사, 3회부터 1회당 -3점', B:'결석 1회당 -1점',
+  C:'결석 1회까지 무사, 2회차 소급 -4점, 이후 1회당 -2점',
+  D:'결석 3회째 즉시 F', E:'결석 4회까지 무사',
+  F:'결석 2회당 -4점',
+};
+const DEFAULT_COURSE_NAMES = {A:'전공 A', B:'전공 B', C:'전공 C', D:'전공 D', E:'전공 E', F:'전공 F'};
+
+/* ===================== 상태 ===================== */
+let G = null;
+let UI = {screen:'title'};
+let dayRunTimer = null;
+
+function clamp(n,min,max){return Math.max(min, Math.min(max, n))}
+function rand(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content; }
+
+/* ===================== 시간표 생성 ===================== */
+function buildLectureSlotPool(){ const pool=[]; for(const d of DAYS) for(const p of PERIODS) pool.push({day:d, period:p.id}); return pool; }
+function buildActivitySlotPool(){ const pool=[]; for(const d of DAYS) for(const h of ACTIVITY_HOURS) pool.push({day:d, hour:h}); return pool; }
+function placeLectures(){
+  let available = buildLectureSlotPool();
+  const courses = MAJOR_TYPES.map(type=>({
+    id:'course-'+type, type, name:DEFAULT_COURSE_NAMES[type],
+    slots:[], absence:0, attendance:0, grade:null, score:null, gpa:null, forcedF:false,
+  }));
+  for(const course of courses){
+    const first = rand(available);
+    available = available.filter(s=>s!==first);
+    let candidates = available.filter(s=>s.period===first.period && s.day!==first.day);
+    if(candidates.length===0) candidates = available;
+    const second = rand(candidates);
+    available = available.filter(s=>s!==second);
+    course.slots = [first, second];
+  }
+  return courses;
+}
+function placeActivities(stageKey, optionalCount){
+  let available = buildActivitySlotPool();
+  const items=[];
+  function place(def){
+    const first = rand(available);
+    available = available.filter(s=>s!==first);
+    let cands = available.filter(s=>s.day!==first.day);
+    if(cands.length===0) cands = available;
+    const second = rand(cands);
+    available = available.filter(s=>s!==second);
+    def.slots=[first, second]; items.push(def);
+  }
+  if(stageKey===1){
+    const pool = ['동아리','소학회','학생회','헬스','학보사','멘토링'].sort(()=>Math.random()-0.5);
+    for(let i=0;i<optionalCount;i++) place({id:'act-opt-'+i, type:'activity', name:pool[i % pool.length], weeksActive:'all', skipCount:0, attendCount:0});
+  }
+  if(stageKey===3){ place({id:'act-contest', type:'activity', name:'공모전준비', weeksActive:'all', skipCount:0, attendCount:0}); }
+  if(stageKey===4){
+    place({id:'act-intern', type:'activity', name:'인턴준비', weeksActive:'all', skipCount:0, attendCount:0});
+    place({id:'job-parttime', type:'partTime', name:'편의점알바', weeksActive:'all', skipCount:0, attendCount:0, unexcused:0});
+  }
+  return items;
+}
+
+/* ===================== 게임 생성 ===================== */
+function newGame(setup){
+  const stage = STAGES[setup.stageKey];
+  const courses = placeLectures();
+  const activities = placeActivities(setup.stageKey, setup.optionalActivities||0);
+  G = {
+    nickname: setup.nickname, avatar: setup.avatar, avatarImage: setup.avatarImage||null, relationships: setup.relationships,
+    stageKey: setup.stageKey, recoverFull: stage.recoverFull,
+    stamina: CAP_STAMINA, week: 1, day: 0,
+    courses, activities, crashNextDay: false, crashTomorrow: null,
+    weekPlan: null, weekOccs:null, weekLog: [],
+    totalSkipLectures:0, totalSkipActivities:0, totalAttendActivities:0, totalUnexcusedJob:0,
+    gameOver:null, finished:false,
+  };
+  buildWeekOccurrences();
+  UI.screen='weekPlan';
+  render();
+}
+
+function buildWeekOccurrences(){
+  const occs=[];
+  for(const c of G.courses){
+    for(const slot of c.slots){
+      occs.push({occId:c.id+'-'+slot.day, kind:'lecture', refId:c.id, day:slot.day, period:slot.period,
+        sortKey: PERIODS.findIndex(p=>p.id===slot.period), label:c.name, timeLabel: PERIODS.find(p=>p.id===slot.period).start});
+    }
+  }
+  for(const a of G.activities){
+    const activeNow = a.weeksActive==='all' || a.weeksActive.includes(G.week);
+    if(!activeNow) continue;
+    for(const slot of a.slots){
+      occs.push({occId:a.id+'-'+slot.day, kind:a.type, refId:a.id, day:slot.day, hour:slot.hour,
+        sortKey: 10+slot.hour, label:a.name, timeLabel: slot.hour+':00'});
+    }
+  }
+  const dayOrder = {월:0,화:1,수:2,목:3,금:4};
+  occs.sort((x,y)=> dayOrder[x.day]-dayOrder[y.day] || x.sortKey-y.sortKey);
+  G.weekOccs = occs;
+  G.weekPlan = {};
+  occs.forEach(o=> G.weekPlan[o.occId]=false);
+}
+
+/* ===================== 점수/학점 ===================== */
+const GPA_TABLE = [ {min:80, grade:'A+', gp:4.5}, {min:70, grade:'A0', gp:4.0},
+  {min:60, grade:'B0', gp:3.0}, {min:40, grade:'C0', gp:2.0}, {min:-9999, grade:'F', gp:0.0} ];
+function recomputeCourse(c){
+  const learningRate = clamp(100 - c.absence*5, 0, 100);
+  const mp = majorPenalty(c.type, c.absence);
+  c.forcedF = mp.forcedF;
+  const score = c.forcedF ? -1 : clamp(learningRate - mp.penalty, -999, 100);
+  c.score = score;
+  const row = c.forcedF ? GPA_TABLE[GPA_TABLE.length-1] : GPA_TABLE.find(r=>score>=r.min);
+  c.grade = row.grade; c.gpa = row.gp;
+}
+function checkGameOver(){
+  if(G.gameOver) return;
+  const fCount = G.courses.filter(c=>c.grade==='F').length;
+  if(fCount>=2){ G.gameOver = {text:'전공 6개 중 2개 이상이 F가 되었다. 학사경고.'}; return; }
+  if(G.stageKey===4){
+    const job = G.activities.find(a=>a.type==='partTime');
+    if(job && job.unexcused>=3){ G.gameOver = {text:'알바 무단결근 3회. 사장님께 잘렸다.', kind:'jobFired'}; return; }
+  }
+}
+// 알바 해고로 인한 조기 종료 전용 엔딩: 성적표 화면으로 가지 않고 바로 암전→알림 플로우로 끊는다.
+function tryJobFiredEnding(){
+  checkGameOver();
+  if(G.gameOver && G.gameOver.kind==='jobFired'){
+    UI.screen='gameOverBlackout';
+    render();
+    return true;
+  }
+  return false;
+}
+
+/* ===================== 나레이션 ===================== */
+function pickRelName(){ if(!G.relationships.length) return null; return rand(G.relationships).name; }
+const NORMAL_LINES = (nick)=>[ `${nick}, 오늘도 묵묵히 수업을 들었다.`, `결석 없이 하루를 마쳤다. 기특하다.` ];
+const SKIP_WITH_REL_LINES = (nick, rel)=>[
+  `수업 대신 ${rel}와(과) 즐겁게 놀았다.`,
+  `${rel}와(과) 보낸 하루, 그 자체로 충전이었다.`,
+];
+const SKIP_NO_REL_LINES = (nick)=>[ `수업 대신 혼자만의 시간을 택했다.`, `알람을 끄고 다시 잠들었다.` ];
+const CRASH_LINES = ()=>[ `눈을 떴지만 몸이 움직이지 않았다. 오늘은 그냥... 날아갔다.`, `녹초가 되어 하루 종일 침대에서 나오지 못했다.` ];
+// 강의에 '출석'했을 때의 멘트 풀. 등록된 관계가 있으면 그 이름을 쓰는 버전도 섞어서 뽑음 —
+// 여기 배열에 원하는 대사를 자유롭게 추가하면 됨 (예: 옆자리 친구가 조는 모습 등).
+function pickAttendLectureLine(label){
+  const rel = pickRelName();
+  const pool = [ `[${label}] 수업에 출석했다.` ];
+  if(rel) pool.push(`옆자리에 앉은 ${rel}의 조는 얼굴이 볼 만했다.`);
+  return rand(pool);
+}
+function staminaBandComment(stam){
+  const ratio = stam/CAP_STAMINA;
+  if(ratio>=0.7) return '컨디션 최상.';
+  if(ratio>=0.4) return '살짝 피곤하지만 버틸 만하다.';
+  if(ratio>=0.15) return '몸이 무겁다. 한계가 보인다.';
+  return '완전히 지쳤다.';
+}
+function buildStopCaption(o, skip){
+  if(skip){
+    const rel = pickRelName();
+    if(o.kind==='lecture') return rel? rand(SKIP_WITH_REL_LINES(G.nickname, rel)) : rand(SKIP_NO_REL_LINES(G.nickname));
+    if(o.kind==='partTime') return '알바를 무단으로 째버렸다.';
+    return rel? `${o.label} 대신 ${rel}와(과) 시간을 보냈다.` : `${o.label}을(를) 쉬었다.`;
+  } else {
+    if(o.kind==='lecture') return pickAttendLectureLine(o.label) + ' (스태미나 -20)';
+    if(o.kind==='partTime') return `[${o.label}] 알바를 뛰었다. (스태미나 -30)`;
+    return `[${o.label}]에 참여했다. (스태미나 -30)`;
+  }
+}
+
+/* ===================== 하루 진행(런) ===================== */
+function applyOccOutcome(o, skip){
+  if(o.kind==='lecture'){
+    const c = G.courses.find(x=>x.id===o.refId);
+    if(skip){ c.absence++; G.totalSkipLectures++; } else { c.attendance++; G.stamina = clamp(G.stamina-20,0,CAP_STAMINA); }
+    recomputeCourse(c);
+  } else if(o.kind==='activity'){
+    const a = G.activities.find(x=>x.id===o.refId);
+    if(skip){ a.skipCount++; G.totalSkipActivities++; } else { a.attendCount++; G.totalAttendActivities++; G.stamina = clamp(G.stamina-30,0,CAP_STAMINA); }
+  } else if(o.kind==='partTime'){
+    const a = G.activities.find(x=>x.id===o.refId);
+    if(skip){ a.unexcused=(a.unexcused||0)+1; G.totalUnexcusedJob++; } else { a.attendCount++; G.stamina = clamp(G.stamina-30,0,CAP_STAMINA); }
+  }
+}
+function enterDayRun(){
+  const dayName = ['월','화','수','목','금','토','일'][G.day];
+  const todays = (G.weekOccs||[]).filter(o=>o.day===dayName);
+  const crashed = G.crashNextDay;
+  if(crashed) G.crashNextDay=false;
+  G.dayCrashed = crashed;
+
+  if(crashed){
+    // 스태미나 고갈 암전: 애니메이션 없이 그 자리에서 오늘 일정 전부 결석 처리. (결석이므로 스태미나는 더 깎이지 않음)
+    todays.forEach(o=>applyOccOutcome(o, true));
+    G.dayCaptionLog = todays.length ? [`아무것도 못하고 집에서 쉬었어.`] : [];
+    if(tryJobFiredEnding()) return;
+    checkGameOver();
+    UI.screen='crashBlackout';
+    render();
+    return;
+  }
+  G.dayStops = [{kind:'home'}, ...todays.map(o=>({kind:'occ', occ:o})), {kind:'home'}];
+  G.dayRunIndex = 0;
+  G.dayCaptionLog = [];
+  G.dayCaption = todays.length? '하루가 시작됐다.' : '오늘은 조용한 하루다.';
+  UI.screen='dayRun';
+  render();
+  armTimer();
+}
+function armTimer(){
+  clearTimeout(dayRunTimer);
+  dayRunTimer = setTimeout(()=>{ advanceDayRun(); }, 1500);
+}
+function advanceDayRun(){
+  if(UI.screen!=='dayRun') return;
+  clearTimeout(dayRunTimer);
+  if(G.dayRunIndex >= G.dayStops.length-1){ finalizeDayToSleep(); return; }
+  G.dayRunIndex++;
+  const stop = G.dayStops[G.dayRunIndex];
+  if(stop.kind==='home'){
+    G.dayCaption = '집에 도착했다.';
+  } else {
+    const o = stop.occ;
+    const skip = !!G.weekPlan[o.occId];
+    stop.skip = skip;
+    applyOccOutcome(o, skip);
+    G.dayCaption = buildStopCaption(o, skip);
+    G.dayCaptionLog.push(G.dayCaption);
+
+    if(tryJobFiredEnding()) return;
+
+    // 스태미나가 0이 되면: 그날 남은 일정이 있을 때만 암전 + 그 뒤 일정 전부 결석 처리.
+    // 오늘의 마지막 일정에서 고갈된 경우엔 무사히 집에 도착한 것으로 치고, 다음 수면 선택으로 그냥 넘어간다.
+    if(G.stamina<=0){
+      const hasRemainingToday = G.dayRunIndex < G.dayStops.length-2;
+      if(hasRemainingToday){
+        for(let i=G.dayRunIndex+1; i<G.dayStops.length-1; i++){
+          const remO = G.dayStops[i].occ;
+          G.dayStops[i].skip = true;
+          applyOccOutcome(remO, true);
+        }
+        G.dayCaptionLog.push(`아무것도 못하고 집에서 쉬었어.`);
+
+        // 내일도 이번 주 안에 있다면, 암전을 두 번 띄우지 않도록 여기서 같이 결석 처리해둔다. (결석이므로 스태미나는 깎이지 않음)
+        G.crashTomorrow = null;
+        if(G.day+1 < 5){
+          const tomorrowName = ['월','화','수','목','금','토','일'][G.day+1];
+          const tomorrowOccs = (G.weekOccs||[]).filter(o=>o.day===tomorrowName);
+          tomorrowOccs.forEach(o=>applyOccOutcome(o, true));
+          G.crashTomorrow = { dayName: tomorrowName, lines: tomorrowOccs.length ? [`아무것도 못하고 집에서 쉬었어.`] : [] };
+        }
+
+        if(tryJobFiredEnding()) return;
+        checkGameOver();
+        UI.screen='crashBlackout';
+        render();
+        return;
+      }
+    }
+  }
+  render();
+  if(UI.screen==='dayRun') armTimer();
+}
+function finalizeDayToSleep(){
+  const dayName = ['월','화','수','목','금','토','일'][G.day];
+  G.weekLog.push({ day:dayName, lines: G.dayCaptionLog.slice(), stamComment:staminaBandComment(G.stamina), stam:G.stamina, crashed:G.dayCrashed });
+  if(tryJobFiredEnding()) return;
+  checkGameOver();
+  UI.screen='daySleep';
+  render();
+}
+function applySleep(hours){
+  const opt = SLEEP_OPTIONS.find(s=>s.h===hours);
+  const recovered = Math.round(G.recoverFull * opt.factor);
+  G.stamina = clamp(G.stamina + recovered, 0, CAP_STAMINA);
+  G.day++;
+  // 주말 없음: 금요일(인덱스 4) 밤을 넘기면 바로 주간 요약으로.
+  if(G.day>=5 || G.gameOver){ G.day=0; G.week++; UI.screen='weekSummary'; render(); return; }
+  enterDayRun();
+}
+// 스태미나 고갈로 하루를 통째로 쉰 뒤: 알림창 확인 누르면 하루 종일 쉰 만큼 회복하고 바로 다음날로.
+// (수면 선택 화면을 거치지 않음 — 이미 하루 종일 쉬었으므로)
+function confirmCrashRest(){
+  const dayName = ['월','화','수','목','금','토','일'][G.day];
+  G.weekLog.push({ day:dayName, lines: G.dayCaptionLog.slice(), stamComment:staminaBandComment(G.stamina), stam:G.stamina, crashed:true });
+  G.stamina = clamp(G.stamina + G.recoverFull, 0, CAP_STAMINA);
+  G.day++;
+
+  if(G.crashTomorrow){
+    const t = G.crashTomorrow;
+    G.crashTomorrow = null;
+    G.weekLog.push({ day:t.dayName, lines: t.lines, stamComment:staminaBandComment(G.stamina), stam:G.stamina, crashed:true });
+    G.day++;
+  }
+
+  if(G.day>=5 || G.gameOver){ G.day=0; G.week++; UI.screen='weekSummary'; render(); return; }
+  enterDayRun();
+}
+
+/* ===================== 최종 결과 ===================== */
+const RANK_BANDS = [ {min:4.4, lo:1, hi:5}, {min:4.0, lo:5, hi:15}, {min:3.5, lo:15, hi:30},
+  {min:3.0, lo:30, hi:50}, {min:2.0, lo:50, hi:75}, {min:0, lo:75, hi:98} ];
+function computeFinalResult(){
+  G.courses.forEach(recomputeCourse);
+  const avgGpa = G.courses.reduce((s,c)=>s+c.gpa,0)/G.courses.length;
+  const band = RANK_BANDS.find(b=>avgGpa>=b.min) || RANK_BANDS[RANK_BANDS.length-1];
+  const percentile = randInt(band.lo, band.hi);
+  const totalSkip = G.totalSkipLectures + G.totalSkipActivities + G.totalUnexcusedJob;
+  const rel = pickRelName();
+  let comment;
+  if(G.gameOver) comment = `결국 학기를 끝까지 마치지 못했다. ${G.gameOver.text}`;
+  else if(totalSkip===0) comment = `단 한 번도 자휴하지 않았다. 지독하게 성실했다.`;
+  else if(avgGpa>=4.0) comment = rel? `자휴도 ${totalSkip}번 했는데 학점은 지켰다. ${rel}도 놀랐을 것이다.` : `자휴 ${totalSkip}번, 그래도 학점은 지켰다.`;
+  else if(avgGpa>=2.0) comment = rel? `적당히 자휴하고, 적당히 ${rel}와(과) 놀고, 적당히 학점을 받았다.` : `적당히 자휴하고 적당히 버틴 평범한 학기였다.`;
+  else comment = rel? `학점은 바닥을 쳤지만 ${rel}와(과)의 추억은 남았다.` : `학점은 바닥을 쳤다. 그래도 하루하루는 즐거웠다.`;
+  if(G.stageKey===1 && G.activities.length===0){
+    comment += ` 그러고 보니 동아리 하나, 소모임 하나 들지 않았다. 조금 밋밋한 1학년이었을지도.`;
+  }
+  // 활동을 3회 이상 빠지면 아쉬운 한 줄을 덧붙인다. (알바는 무단결근 3회에서 이미 해고로 게임오버 처리되므로 제외)
+  const ACTIVITY_NEGLECT_LINES = {
+    '동아리':' 동아리 활동엔 소홀했다. 어느샌가 이름도 가물가물한 사람이 되어버렸다.',
+    '소학회':' 소학회도 흐지부지됐다. 발표 한 번 제대로 못 했다.',
+    '학생회':' 학생회 일도 자꾸 미뤘다. 선배들 보기 민망했다.',
+    '헬스':' 헬스도 작심삼일이었다. 등록만 하고 끝났다.',
+    '학보사':' 학보사 마감을 몇 번이나 펑크냈다. 편집장 눈치가 보였다.',
+    '멘토링':' 멘토링도 뜸해졌다. 멘티에게 미안해졌다.',
+    '공모전준비':' 공모전 준비에 소홀했다. 결국 수상은 남의 이야기였다.',
+    '인턴준비':' 인턴 준비가 소홀했어. 나를 뽑아주는 기업이 없었다...',
+  };
+  G.activities.forEach(a=>{
+    if(a.type==='activity' && a.skipCount>=3 && ACTIVITY_NEGLECT_LINES[a.name]){
+      comment += ACTIVITY_NEGLECT_LINES[a.name];
+    }
+  });
+  return {avgGpa, percentile, totalSkip, comment};
+}
+
+/* ===================== 렌더링 ===================== */
+function render(){
+  const root = document.getElementById('app');
+  root.innerHTML='';
+  if(UI.screen==='title'){ root.appendChild(renderTitle()); return; }
+  if(UI.screen==='main'){ root.appendChild(renderMainHelp()); return; }
+  if(UI.screen==='setup'){ root.appendChild(renderSetup()); return; }
+  if(UI.screen==='crashBlackout'){ root.appendChild(renderCrashBlackout()); return; }
+  if(UI.screen==='crashAlert'){ root.appendChild(renderCrashAlert()); return; }
+  if(UI.screen==='gameOverBlackout'){ root.appendChild(renderGameOverBlackout()); return; }
+  if(UI.screen==='gameOverAlert'){ root.appendChild(renderGameOverAlert()); return; }
+  root.appendChild(renderStatusbar());
+  if(UI.screen==='weekPlan') root.appendChild(renderWeekPlan());
+  else if(UI.screen==='dayRun') root.appendChild(renderDayRun());
+  else if(UI.screen==='daySleep') root.appendChild(renderDaySleep());
+  else if(UI.screen==='weekSummary') root.appendChild(renderWeekSummary());
+  else if(UI.screen==='finalResult') root.appendChild(renderFinalResult());
+}
+
+function renderStatusbar(){
+  const dayLabel = ['월','화','수','목','금','토','일'][G.day];
+  return el(`
+    <div class="statusrow">
+      <div class="sb-left">
+        <div class="sb-avatar">${G.avatarImage ? `<img src="${G.avatarImage}">` : G.avatar}</div>
+        <div class="sb-meta">
+          <div class="sb-name">${escapeHtml(G.nickname)}</div>
+          <div class="sb-stage">${STAGES[G.stageKey].label}</div>
+          <div class="sb-stam-label"><span>STA</span><span>${G.stamina}/${CAP_STAMINA}</span></div>
+          <div class="stam-track"><div class="stam-fill" style="width:${clamp(G.stamina,0,CAP_STAMINA)}%"></div></div>
+        </div>
+      </div>
+      <div class="sb-right">${G.week}주차<br><b>${dayLabel}요일</b></div>
+    </div>`);
+}
+
+/* ---- 타이틀 화면 ---- */
+function renderTitle(){
+  const frag = el(`
+    <div class="wrap" style="padding-top:18vh">
+    <div class="win"><div class="win-title"><span>TITLE</span></div>
+      <div class="win-body center" style="padding:28px 16px; gap:20px">
+        <h1 style="font-size:28px; letter-spacing:.02em">학점 서바이벌</h1>
+        <div style="display:flex; flex-direction:column; gap:8px; width:100%; margin-top:8px">
+          <button class="btn" id="btn-new-game">새 게임 시작</button>
+          <button class="btn" id="btn-how-to" style="background:var(--bg); color:var(--fg)">게임 방법</button>
+        </div>
+      </div>
+    </div>
+    </div>
+  `);
+  frag.getElementById('btn-new-game').onclick = ()=>{ UI.screen='setup'; render(); };
+  frag.getElementById('btn-how-to').onclick = ()=>{ UI.screen='main'; render(); };
+  return frag;
+}
+
+/* ---- 메인(도움말) 화면 ---- */
+function renderMainHelp(){
+  const frag = el(`
+    <div class="wrap">
+    <button class="toggle-sq" id="btn-back-title" style="align-self:flex-start">← 타이틀로</button>
+    <div class="win"><div class="win-title"><span>진행 방법</span></div>
+      <div class="win-body">
+        <p class="hint">매주 시작할 때 그 주의 시간표를 보고 자휴할 과목/활동을 전부 미리 정한다. 한 번 확정하면 그 주 안에는 바꿀 수 없다.<br><br>그 다음 월~금을 하루씩 진행하며, 정해둔 대로 출석/자휴가 처리되고 나레이션이 뜬다. 밤마다 수면 시간을 골라 다음날 스태미나를 회복한다.</p>
+      </div>
+    </div>
+    <div class="win"><div class="win-title"><span>스태미나</span></div>
+      <div class="win-body">
+        <p class="hint">상한은 항상 100. 강의 출석 1회당 -20, 활동/알바 1회당 -30.<br>0이 되면 바로 다음날은 통째로 날아가며(암전), 그날 예정된 일정은 전부 결석 처리된다.<br>밤에 잠을 잘수록(최대 7시간) 다음날 스태미나가 회복되는데, 학년이 올라갈수록 풀수면 시 회복량이 줄어든다.</p>
+      </div>
+    </div>
+    <div class="win"><div class="win-title"><span>전공별 결석 여유</span></div>
+      <div class="win-body">
+        <p class="hint">전공마다 "무사 결석 한도"와 감점 방식이 전부 다르다 — 시간표 화면에서 과목별로 실시간 확인 가능. 단, 전공과 무관하게 결석이 ${GLOBAL_ABSENCE_F}회 쌓이면 그 과목은 바로 F가 확정된다.</p>
+      </div>
+    </div>
+    <div class="win"><div class="win-title"><span>신입생 부가활동</span></div>
+      <div class="win-body">
+        <p class="hint">1학년은 부가활동 참여가 필수가 아니다. 하지만 참여할수록 활동 이력이 쌓이고, 그 이력은 학기가 끝난 뒤 최종 리포트의 코멘트에도 녹아든다. 안 해도 그만이지만, 자휴만 반복하는 것보단 한 번쯤 해볼 만하다.</p>
+      </div>
+    </div>
+    <button class="btn" id="btn-to-setup">시작하기</button>
+    </div>
+  `);
+  frag.getElementById('btn-to-setup').onclick = ()=>{ UI.screen='setup'; render(); };
+  frag.getElementById('btn-back-title').onclick = ()=>{ UI.screen='title'; render(); };
+  return frag;
+}
+
+/* ---- 스태미나 고갈 ① 암전 화면 ---- */
+function renderCrashBlackout(){
+  const frag = el(`
+    <div class="blackout-fade" style="position:fixed; inset:0; z-index:30; background:var(--fg); color:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px">
+      <div style="max-width:420px; width:100%; display:flex; flex-direction:column; gap:16px; text-align:center">
+        <div style="font-size:17px; font-weight:700">[너무 지쳤어... 좀 쉴래.]</div>
+        <button id="btn-blackout-ok" style="border:2px solid var(--bg); background:var(--fg); color:var(--bg); padding:11px 14px; font-weight:700; font-family:var(--font)">...</button>
+      </div>
+    </div>
+  `);
+  frag.getElementById('btn-blackout-ok').onclick = ()=>{ UI.screen='crashAlert'; render(); };
+  return frag;
+}
+
+/* ---- 스태미나 고갈 ② 알림창 ---- */
+function renderCrashAlert(){
+  const dayLabel = ['월','화','수','목','금','토','일'][G.day];
+  const msg = G.crashTomorrow
+    ? `${dayLabel}요일과 ${['월','화','수','목','금','토','일'][G.day+1]}요일, 이틀을 꼬박 집에서 쉬었다.<br>너무 달리는 것도 안 좋나 봐.`
+    : `${dayLabel}요일은 하루종일 집에서 쉬었다.<br>너무 달리는 것도 안 좋나 봐.`;
+  const frag = el(`
+    <div style="position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:20px">
+      <div class="win" style="max-width:360px; width:100%">
+        <div class="win-title"><span>ALERT</span></div>
+        <div class="win-body center" style="padding:26px 18px; gap:16px">
+          <div style="font-size:14px; line-height:1.7">${msg}</div>
+          <button class="btn" id="btn-crash-ok">다시 힘내자!</button>
+        </div>
+      </div>
+    </div>
+  `);
+  frag.getElementById('btn-crash-ok').onclick = confirmCrashRest;
+  return frag;
+}
+
+/* ---- 알바 해고 조기 종료 ① 암전 화면 ---- */
+function renderGameOverBlackout(){
+  const frag = el(`
+    <div class="blackout-fade" style="position:fixed; inset:0; z-index:30; background:var(--fg); color:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px">
+      <div style="max-width:420px; width:100%; display:flex; flex-direction:column; gap:16px; text-align:center">
+        <div style="font-size:17px; font-weight:700">[...네, 네? 사장님. 해고... 라고요?]</div>
+        <button id="btn-gameover-blackout-ok" style="border:2px solid var(--bg); background:var(--fg); color:var(--bg); padding:11px 14px; font-weight:700; font-family:var(--font)">...</button>
+      </div>
+    </div>
+  `);
+  frag.getElementById('btn-gameover-blackout-ok').onclick = ()=>{ UI.screen='gameOverAlert'; render(); };
+  return frag;
+}
+
+/* ---- 알바 해고 조기 종료 ② 알림창 ---- */
+function renderGameOverAlert(){
+  const frag = el(`
+    <div style="position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:20px">
+      <div class="win" style="max-width:360px; width:100%">
+        <div class="win-title"><span>ALERT</span></div>
+        <div class="win-body center" style="padding:26px 18px; gap:16px">
+          <div style="font-size:14px; line-height:1.7">알바를 세 번 이상 빠져 해고를 당했다.<br>큰일났네...</div>
+          <button class="btn" id="btn-gameover-restart">다시 하기</button>
+        </div>
+      </div>
+    </div>
+  `);
+  frag.getElementById('btn-gameover-restart').onclick = ()=>{ UI.screen='setup'; render(); };
+  return frag;
+}
+
+/* ---- 설정 화면 ---- */
+let setupState = {nickname:'', avatar:AVATARS[0], avatarImage:null, relationships:[], stageKey:1, optionalActivities:0};
+function renderSetup(){
+  const frag = el(`
+    <div class="wrap">
+    <div class="win"><div class="win-title"><span>PROFILE</span></div>
+      <div class="win-body">
+        <label class="field">닉네임<input type="text" id="inp-nick" maxlength="10" placeholder="예: 김필동" value="${escapeHtml(setupState.nickname)}"></label>
+        <div class="hint" style="margin-bottom:2px">프로필 (이모지 선택)</div>
+        <div class="row" id="avatar-row"></div>
+        <div class="hint" style="margin:8px 0 2px">또는 갤러리에서 사진 선택</div>
+        <div class="row" style="align-items:center">
+          <input type="file" accept="image/*" id="inp-avatar-file">
+          <div id="avatar-preview"></div>
+        </div>
+      </div>
+    </div>
+    <div class="win"><div class="win-title"><span>RELATIONSHIPS</span><span>선택</span></div>
+      <div class="win-body">
+        <div class="row">
+          <input type="text" id="inp-rel-name" placeholder="이름" style="flex:1; min-width:90px">
+          <input type="text" id="inp-rel-tag" placeholder="태그" style="width:80px">
+          <button class="toggle-sq" id="btn-add-rel">추가</button>
+        </div>
+        <div class="row" id="rel-list"></div>
+      </div>
+    </div>
+    <div class="win"><div class="win-title"><span>STAGE</span></div>
+      <div class="win-body">
+        <div class="row" id="stage-row" style="flex-direction:column"></div>
+        <div id="optional-activity-row" hidden>
+          <div class="hint" style="margin:6px 0 4px">신입생은 부가활동이 자율이야. 몇 개? (0~2)</div>
+          <div class="row" id="opt-act-row"></div>
+        </div>
+      </div>
+    </div>
+    <button class="btn" id="btn-start">게임 시작</button>
+    <button class="btn" id="btn-setup-howto" style="background:var(--bg); color:var(--fg)">게임 방법</button>
+    </div>
+  `);
+  const avatarRow = frag.getElementById('avatar-row');
+  AVATARS.forEach(a=>{
+    const b=document.createElement('button'); b.className='toggle-sq'+(setupState.avatar===a&&!setupState.avatarImage?' on':''); b.textContent=a;
+    b.onclick=()=>{setupState.avatar=a; setupState.avatarImage=null; render();}; avatarRow.appendChild(b);
+  });
+  const avatarPreview = frag.getElementById('avatar-preview');
+  if(setupState.avatarImage){
+    const img=document.createElement('img'); img.src=setupState.avatarImage;
+    img.style.cssText='width:92px;height:92px;object-fit:cover;border:2px solid var(--line)';
+    const rm=document.createElement('button'); rm.textContent='제거'; rm.className='toggle-sq'; rm.style.marginLeft='6px'; rm.style.fontSize='10px';
+    rm.onclick=()=>{ setupState.avatarImage=null; render(); };
+    avatarPreview.appendChild(img); avatarPreview.appendChild(rm);
+  }
+  frag.getElementById('inp-avatar-file').onchange = (e)=>{
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ setupState.avatarImage = reader.result; render(); };
+    reader.readAsDataURL(file);
+  };
+  const relList = frag.getElementById('rel-list');
+  setupState.relationships.forEach((r,i)=>{
+    const d=document.createElement('span'); d.className='toggle-sq';
+    d.innerHTML = `${escapeHtml(r.name)}(${escapeHtml(r.tag||'지인')}) `;
+    const rm=document.createElement('button'); rm.textContent='✕'; rm.style.border='none'; rm.style.background='none'; rm.style.color='var(--fg)'; rm.style.marginLeft='4px';
+    rm.onclick=()=>{setupState.relationships.splice(i,1); render();};
+    d.appendChild(rm); relList.appendChild(d);
+  });
+  const stageRow = frag.getElementById('stage-row');
+  Object.values(STAGES).forEach(s=>{
+    const b=document.createElement('button'); b.className='btn'+(setupState.stageKey===s.key?'':''); b.style.textAlign='left';
+    if(setupState.stageKey===s.key) b.style.background='var(--fg)', b.style.color='var(--bg)';
+    b.innerHTML = `<b>${s.label}</b> — ${s.sub} (최대회복 ${s.recoverFull})`;
+    b.onclick=()=>{setupState.stageKey=s.key; render();}; stageRow.appendChild(b);
+  });
+  if(setupState.stageKey===1){
+    frag.getElementById('optional-activity-row').hidden=false;
+    const optRow = frag.getElementById('opt-act-row');
+    [0,1,2].forEach(n=>{
+      const b=document.createElement('button'); b.className='toggle-sq'+(setupState.optionalActivities===n?' on':''); b.textContent=n+'개';
+      b.onclick=()=>{setupState.optionalActivities=n; render();}; optRow.appendChild(b);
+    });
+  }
+  frag.getElementById('btn-start').onclick = startGameFromSetup;
+  frag.getElementById('btn-setup-howto').onclick = ()=>{ UI.screen='main'; render(); };
+  // 입력창 참조는 append(마운트)되기 전, frag가 아직 채워져 있는 지금 시점에 바로 잡아둬야 함.
+  // (append 이후 frag는 비어버려서 클릭 시점에 다시 찾으면 null이 됨)
+  const relNameEl = frag.getElementById('inp-rel-name');
+  const relTagEl = frag.getElementById('inp-rel-tag');
+  frag.getElementById('btn-add-rel').onclick = ()=>{
+    const name = relNameEl.value.trim(); const tag = relTagEl.value.trim();
+    if(!name) return;
+    setupState.relationships.push({name, tag: tag||'지인'}); render();
+  };
+  setTimeout(()=>{ const ni=document.getElementById('inp-nick'); if(ni) ni.oninput=(e)=>{setupState.nickname=e.target.value;}; },0);
+  return frag;
+}
+function startGameFromSetup(){
+  const nick = document.getElementById('inp-nick').value.trim() || '이름없음';
+  setupState.nickname = nick;
+  newGame({ nickname: setupState.nickname, avatar: setupState.avatar, avatarImage: setupState.avatarImage, relationships: setupState.relationships.slice(),
+    stageKey: setupState.stageKey, optionalActivities: setupState.optionalActivities });
+}
+
+/* ---- 주간 시간표 그리드 ---- */
+let weekPlanModalOpen = false;
+function renderWeekPlan(){
+  const frag = el(`
+    <div class="win"><div class="win-title"><span>WEEK ${G.week} TIMETABLE</span>
+      <button id="btn-open-rules" style="background:none;border:1px solid var(--bg);color:var(--bg);font-size:10px;padding:3px 7px;font-family:var(--font);font-weight:700">결석 룰</button>
+    </div>
+      <div class="win-body">
+        <p class="hint">칸을 누르면 꺼진다 = 자휴. 한 번 확정하면 이번 주 안에는 못 바꿔.</p>
+        <div class="legend"><span><i class="swatch"></i>출석</span><span><i class="swatch off"></i>자휴</span><span><i class="swatch" style="background:var(--hatch)"></i>수업없음</span></div>
+        <div class="row" id="limit-strip" style="margin-top:2px"></div>
+        <p class="hint">검정 칩=이번 결석부터 바로 감점 · 빨간 칩=F 확정. ※ 결석 ${GLOBAL_ABSENCE_F}회 이상이면 전공 무관 F</p>
+        <div id="grid-container"></div>
+        <button class="btn" id="btn-confirm-week">이번 주 계획 확정</button>
+      </div>
+    </div>
+  `);
+  const limitStrip = frag.getElementById('limit-strip');
+  G.courses.forEach(c=>{
+    recomputeCourse(c); // forcedF/grade를 최신 상태로
+    const lim = ABSENCE_LIMIT[c.type];
+    const chip = document.createElement('span'); chip.className='toggle-sq'; chip.style.fontSize='10px'; chip.style.padding='5px 7px';
+    const remain = lim===null ? null : Math.max(0, lim-c.absence);
+    chip.textContent = (lim===null || c.forcedF) ? `${c.name} 결석${c.absence}` : `${c.name} 결석${c.absence}(여유${remain})`;
+    if(c.forcedF) chip.classList.add('chip-forcedF');
+    else if(remain===0) chip.classList.add('chip-exhausted');
+    else if(c.type==='F' && c.absence%2===1) chip.classList.add('chip-exhausted'); // 다음 결석이 2의 배수(감점 확정)가 되기 직전 경고
+    limitStrip.appendChild(chip);
+  });
+  const gridWrap = frag.getElementById('grid-container');
+
+  // 강의 A~F 그리드
+  const lectureGrid = document.createElement('div');
+  lectureGrid.className='grid'; lectureGrid.style.gridTemplateColumns='44px repeat(5,1fr)'; lectureGrid.style.marginBottom='10px';
+  lectureGrid.appendChild(cell('head','교시'));
+  DAYS.forEach(d=>lectureGrid.appendChild(cell('head',d)));
+  const byKey = {};
+  G.weekOccs.filter(o=>o.kind==='lecture').forEach(o=>{ byKey[o.period+'_'+o.day]=o; });
+  PERIODS.forEach(p=>{
+    lectureGrid.appendChild(cell('label', p.short+'<br>'+p.start));
+    DAYS.forEach(d=>{
+      const o = byKey[p.id+'_'+d];
+      lectureGrid.appendChild(o? occCell(o) : cell('empty',''));
+    });
+  });
+  gridWrap.appendChild(lectureGrid);
+
+  // 저녁 활동/알바 행
+  const evenOccs = G.weekOccs.filter(o=>o.kind!=='lecture');
+  if(evenOccs.length){
+    const evLabel = document.createElement('div'); evLabel.className='hint'; evLabel.style.margin='6px 0 4px'; evLabel.textContent='활동 / 알바 (저녁)';
+    gridWrap.appendChild(evLabel);
+    const evGrid = document.createElement('div'); evGrid.className='grid'; evGrid.style.gridTemplateColumns='44px repeat(5,1fr)';
+    evGrid.appendChild(cell('head',''));
+    DAYS.forEach(d=>evGrid.appendChild(cell('head',d)));
+    evGrid.appendChild(cell('label','저녁'));
+    DAYS.forEach(d=>{
+      const items = evenOccs.filter(o=>o.day===d);
+      if(items.length===0){ evGrid.appendChild(cell('empty','')); return; }
+      const wrapCell = document.createElement('div'); wrapCell.className='gcell'; wrapCell.style.flexDirection='column'; wrapCell.style.gap='3px'; wrapCell.style.padding='4px';
+      items.forEach(o=> wrapCell.appendChild(occCellInner(o)));
+      evGrid.appendChild(wrapCell);
+    });
+    gridWrap.appendChild(evGrid);
+  }
+
+  frag.getElementById('btn-confirm-week').onclick = ()=>{ G.weekLog=[]; enterDayRun(); };
+  frag.getElementById('btn-open-rules').onclick = ()=>{ weekPlanModalOpen=true; render(); };
+
+  if(weekPlanModalOpen){
+    const modal = el(`
+      <div style="position:fixed; inset:0; z-index:25; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px">
+        <div class="win" style="max-width:420px; width:100%; max-height:80vh; overflow-y:auto">
+          <div class="win-title"><span>전공별 결석 룰</span><button id="btn-close-rules" style="background:none;border:1px solid var(--bg);color:var(--bg);font-family:var(--font);font-weight:700">닫기 ✕</button></div>
+          <div class="win-body">
+            ${MAJOR_TYPES.map(t=>`<div style="border:1px solid var(--line); padding:8px 10px"><b>${DEFAULT_COURSE_NAMES[t]}</b><div class="hint" style="margin-top:3px">${MAJOR_DESC[t]}</div></div>`).join('')}
+            <p class="hint">※ 전공과 무관하게 결석이 ${GLOBAL_ABSENCE_F}회 쌓이면 그 과목은 즉시 F.</p>
+          </div>
+        </div>
+      </div>
+    `);
+    modal.getElementById('btn-close-rules').onclick = ()=>{ weekPlanModalOpen=false; render(); };
+    frag.appendChild(modal);
+  }
+  return frag;
+
+  function cell(kind, html){ const d=document.createElement('div'); d.className='gcell '+kind; d.innerHTML=html; return d; }
+  function occCell(o){
+    const skip = !!G.weekPlan[o.occId];
+    const d=document.createElement('div'); d.className='gcell occ'+(skip?' off':'');
+    d.innerHTML = `${escapeHtml(o.label)}<small>${escapeHtml(o.timeLabel)}</small>`;
+    d.onclick=()=>{ G.weekPlan[o.occId]=!G.weekPlan[o.occId]; render(); };
+    return d;
+  }
+  function occCellInner(o){
+    const skip = !!G.weekPlan[o.occId];
+    const b=document.createElement('button'); b.className='toggle-sq'+(skip?' on':''); b.style.fontSize='10px'; b.style.padding='4px 6px'; b.style.width='100%';
+    b.textContent = o.label+' '+o.timeLabel;
+    b.onclick=()=>{ G.weekPlan[o.occId]=!G.weekPlan[o.occId]; render(); };
+    return b;
+  }
+}
+
+/* ---- 하루 진행(런) 화면 ---- */
+function renderDayRun(){
+  const stops = G.dayStops; const n = stops.length;
+  const frag = el(`
+    <div class="win"><div class="win-title"><span>${G.week}주차 ${['월','화','수','목','금','토','일'][G.day]}요일</span><span>DAY RUN</span></div>
+      <div class="win-body">
+        <div class="track-wrap">
+          <div class="track"></div>
+          <div class="stops" id="stops-row"></div>
+        </div>
+        <div class="caption-box"><div class="caption-text" id="caption-text"></div></div>
+        <div class="tap-hint">화면을 누르면 다음으로</div>
+      </div>
+    </div>
+  `);
+  const stopsRow = frag.getElementById('stops-row');
+  stops.forEach((s,i)=>{
+    const wrap = document.createElement('div'); wrap.style.position='relative'; wrap.style.width='28px';
+    const icon = s.kind==='home' ? '🏠' : (s.occ.kind==='lecture' ? '📘' : (s.occ.kind==='partTime' ? '💼' : '🎯'));
+    const stopEl = document.createElement('div'); stopEl.className='stop'; stopEl.textContent=icon;
+    const lab = document.createElement('div'); lab.className='stoplabel'; lab.textContent = s.kind==='home'?'집':s.occ.label.slice(0,4);
+    wrap.appendChild(stopEl); wrap.appendChild(lab);
+    stopsRow.appendChild(wrap);
+  });
+  const runner = document.createElement('div'); runner.className='runner'; runner.textContent='🏃';
+  const pct = n<=1? 0 : (G.dayRunIndex/(n-1))*100;
+  runner.style.left = pct+'%';
+  frag.getElementById('stops-row').style.position='relative';
+  frag.getElementById('stops-row').appendChild(runner);
+  frag.getElementById('caption-text').textContent = G.dayCaption;
+
+  const body = frag.querySelector('.win-body');
+  body.onclick = advanceDayRun;
+  return frag;
+}
+
+/* ---- 수면 화면 ---- */
+function renderDaySleep(){
+  const frag = el(`
+    <div class="win"><div class="win-title"><span>SLEEP</span><span>${['월','화','수','목','금','토','일'][G.day]}요일 밤</span></div>
+      <div class="win-body">
+        <div class="sleep-icon">💤</div>
+        <p class="hint center">오늘 밤, 몇 시간 잘까? (최대 7시간)</p>
+        <div class="sleep-row" id="sleep-row"></div>
+      </div>
+    </div>
+  `);
+  const sr = frag.getElementById('sleep-row');
+  SLEEP_OPTIONS.forEach(opt=>{
+    const b=document.createElement('button'); b.className='sleep-btn';
+    b.innerHTML = `<b>${opt.h}h</b>+${Math.round(G.recoverFull*opt.factor)}`;
+    b.onclick=()=>applySleep(opt.h);
+    sr.appendChild(b);
+  });
+  return frag;
+}
+
+/* ---- 주간 요약 ---- */
+function renderWeekSummary(){
+  const over = G.gameOver;
+  const wrap = el(`
+    <div class="win"><div class="win-title"><span>${over? 'GAME OVER' : (G.week-1)+'주차 요약'}</span></div>
+      <div class="win-body">
+        ${over? `<p class="hint" style="color:var(--fg); font-weight:700">${escapeHtml(over.text)}</p>` : ''}
+        <div class="credit-list" id="credit-list"></div>
+        <div class="progress-outer"><div class="progress-inner" style="width:${clamp((G.week-1)/WEEKS_TOTAL*100,0,100)}%"></div></div>
+        <p class="hint" style="text-align:right">${Math.min(G.week-1,WEEKS_TOTAL)} / ${WEEKS_TOTAL}주</p>
+        <button class="btn" id="btn-next">${over||G.week>WEEKS_TOTAL? '최종 결과 보기' : '다음 주로'}</button>
+      </div>
+    </div>
+  `);
+  const cl = wrap.getElementById('credit-list');
+  G.weekLog.forEach(entry=>{
+    const d=document.createElement('div'); d.className='credit-item';
+    const body = entry.lines && entry.lines.length
+      ? entry.lines.map(l=>`<div>${escapeHtml(l)}</div>`).join('')
+      : '<div>특별한 일 없이 지나간 하루.</div>';
+    d.innerHTML = `<div class="dtag">${entry.day}요일</div>${body}`;
+    cl.appendChild(d);
+  });
+  wrap.getElementById('btn-next').onclick = ()=>{
+    if(G.gameOver || G.week>WEEKS_TOTAL){ UI.screen='finalResult'; render(); return; }
+    buildWeekOccurrences(); UI.screen='weekPlan'; render();
+  };
+  return wrap;
+}
+
+/* ---- 최종 결과 ---- */
+function renderFinalResult(){
+  const r = computeFinalResult();
+  const frag = el(`
+    <div class="win"><div class="win-title"><span>FINAL REPORT</span></div>
+      <div class="win-body center">
+        <p class="hint">학기를 끝낸 ${escapeHtml(G.nickname)}의 성적표</p>
+        <div class="bignum">${r.avgGpa.toFixed(2)} <span style="font-size:14px; color:var(--dim)">/ 4.5</span></div>
+        <div class="tagrow">
+          <span class="stat-pill">전교 상위 ${r.percentile}%</span>
+          <span class="stat-pill">총 자휴 ${r.totalSkip}회</span>
+          <span class="stat-pill">활동 참여 ${G.totalAttendActivities}회</span>
+        </div>
+      </div>
+    </div>
+    <div class="win"><div class="win-title"><span>GRADES</span></div>
+      <div class="win-body"><div class="gradegrid" id="grade-grid"></div></div>
+    </div>
+    <div class="win"><div class="win-title"><span>COMMENT</span></div>
+      <div class="win-body"><p style="line-height:1.7">${escapeHtml(r.comment)}</p></div>
+    </div>
+    <p class="hint">※ B/C 구간(60~69%, 40~59%) 경계는 설계자가 임시로 채워 넣은 값입니다.</p>
+    <button class="btn" id="btn-restart">새 학기 시작</button>
+  `);
+  const grid = frag.getElementById('grade-grid');
+  G.courses.forEach(c=>{
+    const row=document.createElement('div'); row.className='graderow';
+    row.innerHTML = `<div class="gname">${escapeHtml(c.name)}<div class="gmaj">결석 ${c.absence}회 · ${escapeHtml(MAJOR_DESC[c.type])}</div></div>
+      <div class="gpill ${c.grade==='F'?'F':''}">${c.grade}</div>`;
+    grid.appendChild(row);
+  });
+  frag.getElementById('btn-restart').onclick = ()=>{
+    setupState = {nickname:'', avatar:AVATARS[0], avatarImage:null, relationships:[], stageKey:1, optionalActivities:0};
+    UI.screen='setup'; render();
+  };
+  return frag;
+}
+
+render();
+</script>
+
+</body></html>
